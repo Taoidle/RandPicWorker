@@ -1,0 +1,33 @@
+name = "rand-pic-worker"
+type = "javascript"
+route = ''
+zone_id = ''
+account_id = ''
+usage_model = ''
+compatibility_flags = []
+workers_dev = true
+compatibility_date = ""
+kv_namespaces = [
+    { binding = "", id = "", preview_id = "" }
+]
+
+[vars]
+JSDELIVR_URL = "https://cdn.jsdelivr.net/gh/"
+GITHUB_USER = ""
+GITHUB_REPO = ""
+GITHUB_REPO_BRANCH = ""
+
+[env.production]
+name = ""
+
+[env.production.vars]
+JSDELIVR_URL = "https://cdn.jsdelivr.net/gh/"
+GITHUB_USER = ""
+GITHUB_REPO = ""
+GITHUB_REPO_BRANCH = ""
+
+[build]
+command = "yarn run build"
+
+[build.upload]
+format = "service-worker"
