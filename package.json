@@ -4,7 +4,7 @@
   "main": "dist/worker.js",
   "scripts": {
     "dev": "yarn run wrangler dev",
-    "build": "yarn run esbuild src/index.ts --bundle --outfile=dist/worker.js",
+    "build": "yarn run esbuild src/index.ts --bundle --platform=node --outfile=dist/worker.js",
     "publish": "yarn run wrangler publish"
   },
   "dependencies": {

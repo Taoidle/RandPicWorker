@@ -1,5 +1,5 @@
-import { getKvKeys, getKvNum, isPicExist, randKvValue, updateKv } from "./workers";
-import { Validator } from "@cfworker/json-schema";
+import { getKvIndex, isKvExist, randKvValue, updateKv } from "./workers";
+import { map_validator, key_validator } from "./schema";
 
 declare global {
     const JSDELIVR_URL: string;
@@ -8,12 +8,9 @@ declare global {
     const GITHUB_REPO_BRANCH: string;
 }
 
-export async function kvNumRequest() {
-    const kv_num = await getKvNum();
-    const data = {
-        kv_num: kv_num,
-    };
-    const json_data = JSON.stringify(data, null, 2);
+export async function kvIndexRequest() {
+    const kv_index = await getKvIndex();
+    const json_data = JSON.stringify(kv_index);
     return new Response(json_data, {
         headers: {
             'content-type': 'application/json;charset=UTF-8',
@@ -21,30 +18,19 @@ export async function kvNumRequest() {
     });
 }
 
-export async function kvKeysRequest() {
-    try {
-        const kv_keys = await getKvKeys();
-        return new Response(JSON.stringify(kv_keys));
-    } catch (e) {
-        console.log("kv get keys error");
-    }
-}
 
 export async function kvExistRequest(request: Request) {
     try {
-        const validator = new Validator({
-            type: "object",
-            required: ['hash'],
-            properties: {
-                hash: {type: "string"}
-            }
-        });
         const content = await request.json();
         const json_data = JSON.parse(JSON.stringify(content));
-        const result = validator.validate(json_data);
+        const result = key_validator.validate(json_data);
         if (result.valid) {
-            const kv_keys = await isPicExist(json_data['hash']);
-            return new Response(JSON.stringify(kv_keys));
+            const kv_keys = await isKvExist(json_data['key']);
+            return new Response(JSON.stringify(kv_keys), {
+                headers: {
+                    'content-type': 'application/json;charset=UTF-8',
+                },
+            });
         } else {
             return r401();
         }
@@ -55,21 +41,16 @@ export async function kvExistRequest(request: Request) {
 
 export async function kvUpdateRequest(request: Request) {
     try {
-        const validator = new Validator({
-            type: "object",
-            patternProperties: {
-                "^.*$": {type: "string"}
-            }
-        });
         const content = await request.json();
         const json_data = JSON.parse(JSON.stringify(content));
-        const result = validator.validate(json_data);
+        const result = map_validator.validate(json_data);
         if (result.valid) {
-            const json_keys = Object.keys(json_data);
-            for (let i = 0; i < json_keys.length; i++) {
-                await updateKv(json_keys[i], json_data[json_keys[i]]);
-            }
-            return new Response(JSON.stringify({msg: "ok"}))
+            await updateKv(json_data)
+            return new Response(JSON.stringify({msg: "ok"}), {
+                headers: {
+                    'content-type': 'application/json;charset=UTF-8',
+                },
+            })
         } else {
             return r401();
         }
@@ -84,7 +65,7 @@ export async function kvRandValue() {
         const img_url = await randKvValue();
         const jsdelivr_url = url + img_url;
         return Response.redirect(jsdelivr_url);
-    }catch (e) {
+    } catch (e) {
         console.log("kv rand value false");
     }
 }
@@ -94,5 +75,9 @@ function r401() {
         statusCode: 401,
         msg: "type error"
     };
-    return new Response(JSON.stringify(json_data));
+    return new Response(JSON.stringify(json_data), {
+        headers: {
+            'content-type': 'application/json;charset=UTF-8',
+        },
+    });
 }
