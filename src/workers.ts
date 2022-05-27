@@ -1,4 +1,4 @@
-import { random, findIndex } from "lodash";
+import { random, findIndex, union, List, toArray } from "lodash";
 
 declare const KV_PIC: KVNamespace
 
@@ -28,37 +28,47 @@ export async function updateKv(json_data: Object) {
     let map_total = index_data['map_total'];
     let map_num = index_data['map_num'];
     let map_list = index_data['map_list'];
+    let map_update: { [k: string]: any; } = {};
+    let map_kv: List<any> | null | undefined = [];
+    for (let i = 0; i < map_list.length; i++) {
+        map_kv = union(map_kv, toArray(Object.keys(JSON.parse(await KV_PIC.get(map_list[i]) as string))))
+    }
     if (data['bool']) {
         for (let i = 0; i < update_keys.length; i++) {
             const key = update_keys[i]
             const value = update_data[update_keys[i]];
             let insert = true;
-            for (let i = 0; i < map_list.length; i++) {
-                const map_get = await KV_PIC.get(map_list[i]);
-                const map = JSON.parse(map_get as string);
-                if (Object.keys(map).length !== 0) {
-                    const map_keys = Object.keys(map);
-                    if (findIndex(map_keys, key) !== -1) {
-                        insert = false;
-                    }
+            if (map_kv.length !== 0) {
+                if (findIndex(map_kv, key) !== -1) {
+                    insert = false;
                 }
             }
             if (insert) {
-                total_num += 1;
                 const map_index = Math.floor(total_num / 100);
-                if (map_index > map_total) {
-                    const map_key = await hashTimestamp();
-                    await KV_PIC.put(map_key, JSON.stringify({}));
+                if (map_index >= map_total) {
+                    const map_key = (await hashTimestamp()) + i.toString();
+                    map_update[map_key] = {};
                     map_list.push(map_key);
                     map_num.push(0);
                     map_total += 1;
                 }
-                let map_insert: { [k: string]: any; } = JSON.parse((await KV_PIC.get(map_list[map_index])) as string);
-                map_insert[key] = value;
-                await KV_PIC.put(map_list[map_index], JSON.stringify(map_insert));
+                if (map_update[map_list[map_index]] === null) {
+                    map_update[map_list[map_index]] = JSON.parse((await KV_PIC.get(map_list[map_index])) as string);
+                }
+                if (map_update[map_list[map_index]] === undefined) {
+                    map_update[map_list[map_index]] = {};
+                }
+                map_update[map_list[map_index]][key] = {};
+                map_update[map_list[map_index]][key] = value;
                 map_num[map_index] += 1;
+                map_kv = union(map_kv, [key]);
+                total_num += 1;
             }
         }
+    }
+    const map_update_key = Object.keys(map_update);
+    for (let i = 0; i < map_update_key.length; i++) {
+        await KV_PIC.put(map_update_key[i], JSON.stringify(map_update[map_update_key[i]]));
     }
     index_data['total_num'] = total_num;
     index_data['map_total'] = map_total;
