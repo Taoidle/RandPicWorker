@@ -12,6 +12,7 @@ kv_namespaces = [
 ]
 
 [vars]
+PAGE_ITEM = 1000
 JSDELIVR_URL = "https://cdn.jsdelivr.net/gh/"
 GITHUB_USER = ""
 GITHUB_REPO = ""
@@ -21,6 +22,7 @@ GITHUB_REPO_BRANCH = ""
 name = ""
 
 [env.production.vars]
+PAGE_ITEM = 1000
 JSDELIVR_URL = "https://cdn.jsdelivr.net/gh/"
 GITHUB_USER = ""
 GITHUB_REPO = ""

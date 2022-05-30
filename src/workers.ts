@@ -2,6 +2,10 @@ import { random, findIndex, union, List, toArray } from "lodash";
 
 declare const KV_PIC: KVNamespace
 
+declare global {
+    const PAGE_ITEM: number
+}
+
 export async function getKvIndex() {
     return new Promise(async resolve => {
         resolve(await isExistIndexKv());
@@ -44,7 +48,7 @@ export async function updateKv(json_data: Object) {
                 }
             }
             if (insert) {
-                const map_index = Math.floor(total_num / 100);
+                const map_index = Math.floor(total_num / PAGE_ITEM);
                 if (map_index >= map_total) {
                     const map_key = (await hashTimestamp()) + i.toString();
                     map_update[map_key] = {};
@@ -82,8 +86,8 @@ export async function randKvValue() {
         const json_data = JSON.parse(JSON.stringify(await isExistIndexKv()));
         const data = JSON.parse(json_data['data']);
         const r_index = random(data['total_num'], false);
-        const map = JSON.parse(await KV_PIC.get(data['map_list'][Math.floor(r_index / 100)]) as string);
-        resolve(map[Object.keys(map)[Math.floor(r_index % 100) - 1]]);
+        const map = JSON.parse(await KV_PIC.get(data['map_list'][Math.floor(r_index / PAGE_ITEM)]) as string);
+        resolve(map[Object.keys(map)[Math.floor(r_index % PAGE_ITEM) - 1]]);
     });
 }
 
